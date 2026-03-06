@@ -1,7 +1,16 @@
-// UI LAYER: Screens
+// =============================================================
+// VIEW: Displays UI and captures user input
+//
+// RULES:
+// 1. View is StatelessWidget (state is in ViewModel)
+// 2. View NEVER contains logic - only calls ViewModel methods
+// 3. View reads data via getters, never modifies directly
+// 4. Use watch() for data that needs to rebuild
+// 5. Use read() for actions (button presses)
+// 6. Use Consumer for specific parts that need rebuilding
+// =============================================================
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/student_model.dart';
 import '../viewmodels/student_viewmodel.dart';
 
 class StudentView extends StatelessWidget {
@@ -9,95 +18,128 @@ class StudentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // METHOD 1: watch() - "I need this data and want to rebuild when it changes"
+    // Use watch() when this widget DISPLAYS data that can change
+    final viewModel = context.watch<StudentViewModel>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Student Info App'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text("My Student Card - MVVM"),
+        backgroundColor: Colors.blue,
       ),
-      body: Consumer<StudentViewModel>(
-        builder: (context, viewModel, child) {
-          if (viewModel.students.isEmpty) {
-            return const Center(
-              child: Text('No students added yet'),
-            );
-          }
-          
-          return ListView.builder(
-            itemCount: viewModel.students.length,
-            itemBuilder: (context, index) {
-              final student = viewModel.students[index];
-              return Card(
-                margin: const EdgeInsets.all(8.0),
-                child: ListTile(
-                  title: Text(student.name),
-                  subtitle: Text('${student.studentNumber} - ${student.course}'),
-                  trailing: Text(student.email),
-                ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddStudentDialog(context),
-        tooltip: 'Add Student',
-        child: const Icon(Icons.add),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Student Info Card
+            _buildInfoCard(viewModel),
+            const SizedBox(height: 30),
+            // METHOD 2: Consumer - rebuilds ONLY this specific part
+            _buildSubjectIndicator(),
+            const SizedBox(height: 20),
+            // METHOD 3: read() - for button actions
+            _buildChangeButton(),
+            const SizedBox(height: 20),
+            // Subject list using Consumer
+            _buildSubjectList(),
+          ],
+        ),
       ),
     );
   }
 
-  void _showAddStudentDialog(BuildContext context) {
-    final nameController = TextEditingController();
-    final numberController = TextEditingController();
-    final emailController = TextEditingController();
-    final courseController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Student'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: numberController,
-              decoration: const InputDecoration(labelText: 'Student Number'),
-            ),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: courseController,
-              decoration: const InputDecoration(labelText: 'Course'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+  // Helper method to keep build() clean
+  Widget _buildInfoCard(StudentViewModel viewModel) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.blue, width: 2),
+      ),
+      child: Column(
+        children: [
+          Text(
+            "Student Name: ${viewModel.studentName}",
+            style: const TextStyle(fontSize: 24),
           ),
-          TextButton(
-            onPressed: () {
-              final student = StudentModel(
-                id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: nameController.text,
-                studentNumber: numberController.text,
-                email: emailController.text,
-                course: courseController.text,
-              );
-              context.read<StudentViewModel>().addStudent(student);
-              Navigator.pop(context);
-            },
-            child: const Text('Add'),
+          const SizedBox(height: 10),
+          Text(
+            "Favorite Subject: ${viewModel.currentSubject}",
+            style: const TextStyle(fontSize: 20, color: Colors.green),
           ),
         ],
       ),
+    );
+  }
+
+  // Consumer example - only this part rebuilds
+  Widget _buildSubjectIndicator() {
+    return Consumer<StudentViewModel>(
+      builder: (context, viewModel, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.blue[100],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            "Subject ${viewModel.currentIndex + 1} of ${viewModel.subjects.length}",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildChangeButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () {
+          // read() gets ViewModel without rebuilding this button
+          context.read<StudentViewModel>().changeSubject();
+        },
+        child: const Text("Change Subject"),
+      ),
+    );
+  }
+
+  // Subject list using Consumer
+  Widget _buildSubjectList() {
+    return Consumer<StudentViewModel>(
+      builder: (context, viewModel, child) {
+        return Column(
+          children: [
+            const Text(
+              "Available Subjects:",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: viewModel.subjects.map((subject) {
+                final isCurrent = subject == viewModel.currentSubject;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isCurrent ? Colors.green : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    subject,
+                    style: TextStyle(
+                      color: isCurrent ? Colors.white : Colors.black,
+                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        );
+      },
     );
   }
 }

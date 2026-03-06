@@ -1,39 +1,40 @@
-// DATA LAYER: Pure data classes
+// =============================================================
+// MODEL: Defines WHAT our data looks like
+//
+// RULES:
+// 1. Models contain ONLY properties and constructors
+// 2. NO logic, NO UI, NO Flutter widgets
+// 3. All properties are final (cannot change)
+// 4. Provide copyWith() method for updates
+// =============================================================
 class StudentModel {
-  final String id;
-  final String name;
-  final String studentNumber;
-  final String email;
-  final String course;
+  // These are the pieces of data we track
+  final String name; // Student's name
+  final String currentSubject; // Currently selected subject
+  final List<String> subjects; // All available subjects
+  final int currentIndex; // Which subject is selected
 
+  // Constructor - how we CREATE a StudentModel
   StudentModel({
-    required this.id,
     required this.name,
-    required this.studentNumber,
-    required this.email,
-    required this.course,
+    required this.currentSubject,
+    required this.subjects,
+    required this.currentIndex,
   });
 
-  // Create StudentModel from Map (JSON)
-  factory StudentModel.fromMap(Map<String, dynamic> map) {
+  // copyWith - how we "UPDATE" data (creates a new copy with changes)
+  StudentModel copyWith({
+    String? name,
+    String? currentSubject,
+    List<String>? subjects,
+    int? currentIndex,
+  }) {
     return StudentModel(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      studentNumber: map['studentNumber'] ?? '',
-      email: map['email'] ?? '',
-      course: map['course'] ?? '',
+      name: name ?? this.name,
+      currentSubject: currentSubject ?? this.currentSubject,
+      subjects: subjects ?? this.subjects,
+      currentIndex: currentIndex ?? this.currentIndex,
     );
-  }
-
-  // Convert StudentModel to Map (JSON)
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'studentNumber': studentNumber,
-      'email': email,
-      'course': course,
-    };
   }
 }
 

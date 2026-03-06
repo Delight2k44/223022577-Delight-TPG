@@ -1,3 +1,11 @@
+// =============================================================
+// MAIN.DART: The entry point - connects everything
+//
+// RULES:
+// 1. Wrap the app with ChangeNotifierProvider
+// 2. Provider creates the ViewModel ONCE and makes it available
+// 3. Use create: NOT value: for objects that should live
+// =============================================================
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/student_viewmodel.dart';
@@ -13,16 +21,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
+      // create: Creates the ViewModel ONCE when app starts
+      // Important: Use create: NOT value: for objects that should live
       create: (context) => StudentViewModel(),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Student Info App',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
+        theme: ThemeData(primarySwatch: Colors.blue),
+        // child: The first screen that can access this ViewModel
         home: const StudentView(),
       ),
     );
   }
 }
+
 
